@@ -325,17 +325,17 @@ def wbem_request(url, data, creds, headers=None, debug=False, x509=None,
         :exc:`~pywbem.TimeoutError`
     """
 
-    class HTTPBaseConnection:        # pylint: disable=no-init
+    class HTTPBaseConnection(object):
         """ Common base for specific connection classes. Implements
             the send method
         """
-        # pylint: disable=old-style-class,too-few-public-methods
+        # pylint: too-few-public-methods
         def send(self, strng):
             """ Same as httplib.HTTPConnection.send(), except we don't
             check for sigpipe and close the connection.  If the connection
             gets closed, getresponse() fails.
             """
-
+            # TODO KS 30 mar 2016. No sock member, etc.
             if self.sock is None:
                 if self.auto_open:
                     self.connect()
@@ -435,10 +435,19 @@ def wbem_request(url, data, creds, headers=None, debug=False, x509=None,
                         self.sock.set_socket_write_timeout(
                             SSL.timeout(self.timeout))
 
-                self.sock.addr = (self.host, self.port)
-                self.sock.setup_ssl()
-                self.sock.set_connect_state()
-                ret = self.sock.connect_ssl()
+                if _HAVE_M2CRYPTO:
+                    self.sock.addr = (self.host, self.port)
+                    self.sock.setup_ssl()
+                    self.sock.set_connect_state()
+                    ret = self.sock.connect_ssl()
+                else:
+                    _socket = socket.socket(socket.AF_INET,
+                                            socket.SOCK_STREAM)
+                    if self.timeout is not None:
+                        _socket.settimeout(self.timeout)
+                    self.sock = SSL.wrap_socket(_socket)
+                    ret = self.sock.connect(self.host, self.port)
+
                 if self.ca_certs:
                     check = getattr(self.sock, 'postConnectionCheck',
                                     self.sock.clientPostConnectionCheck)
