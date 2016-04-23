@@ -9,6 +9,7 @@ from __future__ import print_function, absolute_import
 
 import sys
 import os
+import copy
 from time import time
 from zipfile import ZipFile
 from tempfile import TemporaryFile
@@ -134,12 +135,11 @@ class TestFullSchema(MOFTest):
 
 class TestFullSchemaRoundTrip(MOFTest):
     """ Test compile, mof generation, and recompile"""
-    # TODO: When this works combine into the previous test
+    # TODO: When this works combine into the previous test to save test time
 
     def test_all(self):
         """Test compile, generate mof, and recompile"""
         start_time = time()
-
         self.mofcomp.compile_file(
             os.path.join(SCHEMA_DIR, CIM_SCHEMA_MOF), NAME_SPACE)
 
@@ -147,44 +147,38 @@ class TestFullSchemaRoundTrip(MOFTest):
 
         repo = self.mofcomp.handle
 
-        # write mof for the qualifiers decls and classes
+        # Creat file for mof output
         mofout_filename = os.path.join(SCRIPT_DIR, TMP_FILE)
         mof_out_hndl = open(mofout_filename, 'w')
 
-        qual_decls = self.mofcomp.handle.EnumerateQualifiers(NAME_SPACE)
-
-        for qd in sorted(qual_decls):
-            print('{}'.format(qd.tomof()), file=mof_out_hndl)
-
-        # test getting classes through GetClass
-        class_list = []
-        for cl_name in self.mofcomp.handle.classes[NAME_SPACE]:
-            cl_ = self.mofcomp.handle.GetClass(namespace=NAME_SPACE,
-                                               ClassName=cl_name,
-                                               LocalOnly=True,
-                                               IncludeQualifiers=True,
-                                               IncludeClassOrigin=True)
-            class_list.append(cl_)
-            print('{}'.format(cl_.tomof()), file=mof_out_hndl)
-
+        # create a new mof file with the qualifiers and classes
+        for qd in sorted(repo.qualifiers[NAME_SPACE].values()):
+            print(qd.tomof(), file=mof_out_hndl)
         classes = repo.classes[NAME_SPACE]
-        
-        # Compare with getting classes directly from self.mofcomp
-        self.assertEqual(len(class_list), len(classes))
-        for cl_ in class_list:
-            test_class = classes[cl_.classname]
-            self.assertTrue(isinstance(cl_, CIMClass))
-            self.assertTrue(isinstance(test_class, CIMClass))
-            self.assertEqual(cl_, test_class)
+        for cl_ in repo.compile_ordered_classnames:
+            print(classes[cl_].tomof(),
+                  file=mof_out_hndl)
+
+        # save original qualifiers and classes for compare
+        orig_qual_decls = copy.deepcopy(repo.qualifiers[NAME_SPACE])
+        orig_classes = copy.deepcopy(repo.classes[NAME_SPACE])
+
+        self.assertEqual(len(orig_qual_decls), TOTAL_QUALIFIERS)
+        self.assertEqual(len(orig_classes), TOTAL_CLASSES)
 
         # compile the created mof output file
+
         print('Start recompile file= %s' % mofout_filename)
         self.mofcomp.compile_file(mofout_filename, NAME_SPACE)
 
-        print('start size compares')
-        self.assertEqual(len(classes),
+        self.assertEqual(len(self.mofcomp.handle.qualifiers[NAME_SPACE]),
+                         TOTAL_QUALIFIERS)
+        self.assertEqual(len(self.mofcomp.handle.classes[NAME_SPACE]),
+                         TOTAL_CLASSES)
+
+        self.assertEqual(len(orig_classes),
                          len(self.mofcomp.handle.classes[NAME_SPACE]))
-        self.assertEqual(len(qual_decls),
+        self.assertEqual(len(orig_qual_decls),
                          len(self.mofcomp.handle.qualifiers[NAME_SPACE]))
 
         print('elapsed recompile: %f  ' % (time() - start_time))
@@ -196,8 +190,8 @@ class TestFullSchemaRoundTrip(MOFTest):
 class TestAliases(MOFTest):
     """Test of a mof file that contains aliases"""
 
-
     def test_all(self):
+        """Execute test using test.mof file"""
         self.mofcomp.compile_file(
             os.path.join(SCRIPT_DIR, 'test.mof'), NAME_SPACE)
 
@@ -207,6 +201,10 @@ class TestSchemaError(MOFTest):
     """Test with errors in the Schema"""
 
     def test_all(self):
+        """Test multiple errors. Each test tries to compile a
+           specific mof and should result in a specific error
+        """
+        # TODO ks 4/16 should these become individual tests
         self.mofcomp.parser.search_paths = []
         try:
             self.mofcomp.compile_file(os.path.join(SCHEMA_DIR,
@@ -245,8 +243,12 @@ class TestSchemaError(MOFTest):
             self.assertEqual(ce.file_line[1], 179)
 
 class TestSchemaSearch(MOFTest):
+    """Test the search for schema option of the compiler"""
 
     def test_all(self):
+        """Test against schema single mof file that is dependent
+           on other files in the schema directory
+        """
         self.mofcomp.compile_file(os.path.join(SCHEMA_DIR,
                                                'System',
                                                'CIM_ComputerSystem.mof'),
@@ -261,10 +263,17 @@ class TestSchemaSearch(MOFTest):
             LocalOnly=False, IncludeQualifiers=True)
         self.assertEqual(cele.properties['RequestedState'].type, 'uint16')
 
+        # TODO ks 4/16 add error test for something not found
+        # in schema directory
+
 
 class TestParseError(MOFTest):
+    """Test multiple mof compile errors. Each test should generate
+       a defined error.
+    """
 
     def test_all(self):
+        """Run all parse error tests"""
         _file = os.path.join(SCRIPT_DIR,
                              'testmofs',
                              'parse_error01.mof')
@@ -335,6 +344,7 @@ class TestPropertyAlternatives(MOFTest):
     #     parameter alternatives one by one.
 
 class TestRefs(MOFTest):
+    """Test for valie References in mof"""
 
     def test_all(self):
         self.mofcomp.compile_file(os.path.join(SCRIPT_DIR,
@@ -343,8 +353,10 @@ class TestRefs(MOFTest):
                                   NAME_SPACE)
 
 class TestTypes(MOFTest, CIMObjectMixin):
+    """Test for all CIM data types"""
 
     def test_all(self):
+        """Execute test"""
         self.mofcomp.compile_file(os.path.join(SCRIPT_DIR,
                                                'testmofs',
                                                'test_types.mof'),
@@ -469,6 +481,7 @@ class BaseTestLexer(unittest.TestCase):
     def lex_error(value, lineno, lexpos):
         """Return an expected LEX error."""
         tok = LexErrorToken()
+        #pylint: disable=attribute-defined-outside-init
         tok.type = None
         tok.value = value
         tok.lineno = lineno

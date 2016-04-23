@@ -1701,6 +1701,7 @@ class MOFWBEMConnection(BaseRepositoryConnection):
         self.qualifiers = {}
         self.instances = {}
         self.classes = {}
+        self.compile_ordered_classnames = []
         if conn is None:
             # This instance variable is used only to make get/set
             # of 'default_namespace' behave as it should, in the case
@@ -1834,6 +1835,9 @@ class MOFWBEMConnection(BaseRepositoryConnection):
                     raise
 
         try:
+            self.compile_ordered_classnames.append(cc.classname)
+            
+            # The following generates an exception for each new ns
             self.classes[self.default_namespace][cc.classname] = cc
         except KeyError:
             self.classes[self.default_namespace] = \
