@@ -1836,7 +1836,7 @@ class MOFWBEMConnection(BaseRepositoryConnection):
 
         try:
             self.compile_ordered_classnames.append(cc.classname)
-            
+
             # The following generates an exception for each new ns
             self.classes[self.default_namespace][cc.classname] = cc
         except KeyError:
@@ -2053,6 +2053,8 @@ class MOFCompiler(object):
         if ns not in self.parser.classnames:
             self.parser.classnames[ns] = []
         try:
+            # Call the parser.  To generate detailed output of states
+            # add debug=1 to following line.
             rv = self.parser.parse(mof, lexer=lexer)
             self.parser.file = oldfile
             self.parser.mof = oldmof
