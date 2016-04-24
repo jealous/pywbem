@@ -132,77 +132,8 @@ class TestFullSchema(MOFTest):
         self.assertEqual(len(self.mofcomp.handle.classes[NAME_SPACE]),
                          TOTAL_CLASSES)
 
-<<<<<<< HEAD
-
-
 class TestAliases(MOFTest):
     """Test of a mof file that contains aliases"""
-=======
-class TestFullSchemaRoundTrip(MOFTest):
-    """ Test compile, mof generation, and recompile"""
-    # TODO: When this works combine into the previous test
-
-    def test_all(self):
-        """Test compile, generate mof, and recompile"""
-        start_time = time()
-
-        self.mofcomp.compile_file(
-            os.path.join(SCHEMA_DIR, CIM_SCHEMA_MOF), NAME_SPACE)
-
-        print('elapsed compile: %f  ' % (time() - start_time))
-
-        repo = self.mofcomp.handle
-
-        # write mof for the qualifiers decls and classes
-        mofout_filename = os.path.join(SCRIPT_DIR, TMP_FILE)
-        mof_out_hndl = open(mofout_filename, 'w')
-
-        qual_decls = self.mofcomp.handle.EnumerateQualifiers(NAME_SPACE)
-
-        for qd in sorted(qual_decls):
-            print('{}'.format(qd.tomof()), file=mof_out_hndl)
-
-        # test getting classes through GetClass
-        class_list = []
-        for cl_name in self.mofcomp.handle.classes[NAME_SPACE]:
-            cl_ = self.mofcomp.handle.GetClass(namespace=NAME_SPACE,
-                                               ClassName=cl_name,
-                                               LocalOnly=True,
-                                               IncludeQualifiers=True,
-                                               IncludeClassOrigin=True)
-            class_list.append(cl_)
-            print('{}'.format(cl_.tomof()), file=mof_out_hndl)
-
-        classes = repo.classes[NAME_SPACE]
-        
-        # Compare with getting classes directly from self.mofcomp
-        self.assertEqual(len(class_list), len(classes))
-        for cl_ in class_list:
-            test_class = classes[cl_.classname]
-            self.assertTrue(isinstance(cl_, CIMClass))
-            self.assertTrue(isinstance(test_class, CIMClass))
-            self.assertEqual(cl_, test_class)
-
-        # compile the created mof output file
-        print('Start recompile file= %s' % mofout_filename)
-        self.mofcomp.compile_file(mofout_filename, NAME_SPACE)
-
-        print('start size compares')
-        self.assertEqual(len(classes),
-                         len(self.mofcomp.handle.classes[NAME_SPACE]))
-        self.assertEqual(len(qual_decls),
-                         len(self.mofcomp.handle.qualifiers[NAME_SPACE]))
-
-        print('elapsed recompile: %f  ' % (time() - start_time))
-
-        # TODO ks 4/16 compare all qualifiers and classes between orig and new
-
-        os.remove(mofout_filename)
-
-class TestAliases(MOFTest):
-    """Test of a mof file that contains aliases"""
-
->>>>>>> f89701b0cf70fd56089835243999222777887763
 
     def test_all(self):
         """Execute test using test.mof file"""
@@ -212,7 +143,7 @@ class TestAliases(MOFTest):
     # TODO: ks 4/16 confirm that this actually works other than just compile
 
 class TestSchemaError(MOFTest):
-    """Test with errors in the Schema"""
+    """Test with errors in the schema"""
 
     def test_all(self):
         """Test multiple errors. Each test tries to compile a
