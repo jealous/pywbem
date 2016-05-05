@@ -2,6 +2,7 @@
 /.settings/
 .pydevproject
 /.cache/
+/.idea/
 /.tox/
 *.pyc
 *.log

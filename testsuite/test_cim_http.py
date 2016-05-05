@@ -1,200 +1,45 @@
-#!/usr/bin/env python
+# coding=utf-8
+from __future__ import unicode_literals
+from hamcrest import assert_that, equal_to
 
-"""Exercise routines in cim_http"""
+from pywbemReq.cim_http import parse_url
+from unittest import TestCase
 
-from __future__ import absolute_import
-
-import unittest
-
-from pywbem import cim_http
-
-
-class Parse_url(unittest.TestCase):  # pylint: disable=invalid-name
-    """
-    Test the parse_url() function.
-    """
-
-    def _run_single(self, url, exp_host, exp_port, exp_ssl):
-        '''
-        Test function for single invocation of parse_url()
-        '''
-
-        host, port, ssl = cim_http.parse_url(url)
-
-        self.assertEqual(host, exp_host,
-                         "Unexpected host: %r, expected: %r" %\
-                         (host, exp_host))
-        self.assertEqual(port, exp_port,
-                         "Unexpected port: %r, expected: %r" %\
-                         (port, exp_port))
-        self.assertEqual(ssl, exp_ssl,
-                         "Unexpected ssl: %r, expected: %r" %\
-                         (ssl, exp_ssl))
+__author__ = 'Cedric Zhuang'
 
 
-    def test_all(self):
-        '''
-        Run all tests for parse_url().
-        '''
+class CimHttpTest(TestCase):
+    def test_parse_url(self):
+        url = 'http://www.abc.com:5050/page.xml'
+        host, port, ssl = parse_url(url)
+        assert_that(host, equal_to('www.abc.com'))
+        assert_that(port, equal_to(5050))
+        assert_that(ssl, equal_to(False))
 
-        # Keep these defaults in sync with those in cim_http.parse_url()
-        default_port_http = 5988
-        default_port_https = 5989
-        default_ssl = False
+    def test_parse_url_ssl(self):
+        url = 'https://10.0.0.1:4443/page/my.html?filter=name'
+        host, port, ssl = parse_url(url)
+        assert_that(host, equal_to('10.0.0.1'))
+        assert_that(port, equal_to(4443))
+        assert_that(ssl, equal_to(True))
 
-        self._run_single("http://my.host.com",
-                         "my.host.com",
-                         default_port_http,
-                         False)
+    def test_parse_url_ipv6(self):
+        url = 'https://[2001:db8:a0b:12f0::1%eth0]:21/my.txt'
+        host, port, ssl = parse_url(url)
+        assert_that(host, equal_to('2001:db8:a0b:12f0::1%eth0'))
+        assert_that(port, equal_to(21))
+        assert_that(ssl, equal_to(True))
 
-        self._run_single("https://my.host.com/",
-                         "my.host.com",
-                         default_port_https,
-                         True)
+    def test_parse_url_default_port(self):
+        url = 'https://2001:db8:a0b:12f0::1-eth0/my.txt'
+        host, port, ssl = parse_url(url)
+        assert_that(host, equal_to('2001:db8:a0b:12f0::1%eth0'))
+        assert_that(port, equal_to(5989))
+        assert_that(ssl, equal_to(True))
 
-        self._run_single("my.host.com",
-                         "my.host.com",
-                         default_port_http,
-                         default_ssl)
-
-        self._run_single("http.com",
-                         "http.com",
-                         default_port_http,
-                         default_ssl)
-
-        self._run_single("http.com/",
-                         "http.com",
-                         default_port_http,
-                         default_ssl)
-
-        self._run_single("http.com/path.segment.com",
-                         "http.com",
-                         default_port_http,
-                         default_ssl)
-
-        self._run_single("http.com//path.segment.com",
-                         "http.com",
-                         default_port_http,
-                         default_ssl)
-
-        self._run_single("http://my.host.com:1234",
-                         "my.host.com",
-                         1234,
-                         False)
-
-        self._run_single("http://my.host.com:1234/",
-                         "my.host.com",
-                         1234,
-                         False)
-
-        self._run_single("http://my.host.com:1234/path/segment",
-                         "my.host.com",
-                         1234,
-                         False)
-
-        self._run_single("http://9.10.11.12:1234",
-                         "9.10.11.12",
-                         1234,
-                         False)
-
-        self._run_single("my.host.com:1234",
-                         "my.host.com",
-                         1234,
-                         default_ssl)
-
-        self._run_single("my.host.com:1234/",
-                         "my.host.com",
-                         1234,
-                         default_ssl)
-
-        self._run_single("9.10.11.12/",
-                         "9.10.11.12",
-                         default_port_http,
-                         default_ssl)
-
-        self._run_single("HTTP://my.host.com",
-                         "my.host.com",
-                         default_port_http,
-                         False)
-
-        self._run_single("HTTPS://my.host.com",
-                         "my.host.com",
-                         default_port_https,
-                         True)
-
-        self._run_single("http://[2001:db8::7348]",
-                         "2001:db8::7348",
-                         default_port_http,
-                         False)
-
-        self._run_single("http://[2001:db8::7348-1]",
-                         "2001:db8::7348%1",
-                         default_port_http,
-                         False)
-
-        self._run_single("http://[2001:db8::7348-eth1]",
-                         "2001:db8::7348%eth1",
-                         default_port_http,
-                         False)
-
-        # Toleration of (incorrect) IPv6 URI format supported by PyWBEM:
-        # Must specify port; zone index must be specified with % if used
-
-        self._run_single("http://2001:db8::7348:1234",
-                         "2001:db8::7348",
-                         1234,
-                         False)
-
-        self._run_single("http://2001:db8::7348%eth0:1234",
-                         "2001:db8::7348%eth0",
-                         1234,
-                         False)
-
-        self._run_single("http://2001:db8::7348%1:1234",
-                         "2001:db8::7348%1",
-                         1234,
-                         False)
-
-        self._run_single("https://[2001:db8::7348]/",
-                         "2001:db8::7348",
-                         default_port_https,
-                         True)
-
-        self._run_single("http://[2001:db8::7348]:1234",
-                         "2001:db8::7348",
-                         1234,
-                         False)
-
-        self._run_single("https://[::ffff.9.10.11.12]:1234/",
-                         "::ffff.9.10.11.12",
-                         1234,
-                         True)
-
-        self._run_single("https://[::ffff.9.10.11.12-0]:1234/",
-                         "::ffff.9.10.11.12%0",
-                         1234,
-                         True)
-
-        self._run_single("https://[::ffff.9.10.11.12-eth0]:1234/",
-                         "::ffff.9.10.11.12%eth0",
-                         1234,
-                         True)
-
-        self._run_single("[2001:db8::7348]",
-                         "2001:db8::7348",
-                         default_port_http,
-                         default_ssl)
-
-        self._run_single("[2001:db8::7348]/",
-                         "2001:db8::7348",
-                         default_port_http,
-                         default_ssl)
-
-        self._run_single("[2001:db8::7348]/-eth0",
-                         "2001:db8::7348",
-                         default_port_http,
-                         default_ssl)
-
-
-if __name__ == '__main__':
-    unittest.main()
+    def test_parse_url_default_protocol(self):
+        url = '10.0.0.1/my.txt'
+        host, port, ssl = parse_url(url)
+        assert_that(host, equal_to('10.0.0.1'))
+        assert_that(port, equal_to(5988))
+        assert_that(ssl, equal_to(False))
