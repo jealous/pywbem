@@ -1502,10 +1502,10 @@ def parse_embeddedObject(val):
         return [parse_embeddedObject(obj) for obj in val]
     if val is None:
         return None
-    tt = tupletree.xml_to_tupletree(val)
-    if tt[0] == 'INSTANCE':
+    tt = ElementTree.fromstring(val)
+    if tt.tag == 'INSTANCE':
         return parse_instance(tt)
-    elif tt[0] == 'CLASS':
+    elif tt.tag == 'CLASS':
         return parse_class(tt)
     else:
         raise ParseError('Error parsing embedded object')

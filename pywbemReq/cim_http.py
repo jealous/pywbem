@@ -39,7 +39,6 @@ import re
 import requests
 import six
 
-
 log = logging.getLogger(__name__)
 
 __all__ = ['Error', 'ConnectionError', 'AuthError', 'TimeoutError',
@@ -212,6 +211,10 @@ def _normalize_ca_certs(verify, ca_certs):
 def _normalize_header(header, creds):
     header['Content-type'] = 'application/xml; charset="utf-8"'
     if creds is not None:
+        try:
+            base64.encodebytes
+        except AttributeError:
+            base64.encodebytes = base64.encodestring
         header['Authorization'] = 'Basic {}'.format(base64.encodebytes(
             '{}:{}'.format(creds[0], creds[1])).replace('\n', ''))
     return header

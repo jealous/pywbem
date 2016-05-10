@@ -110,9 +110,7 @@ class MinutesFromUTC(tzinfo):
 
 class CIMType(object):
     """Base type for numeric and datetime CIM types."""
-
-    def __init__(self, _):
-        self.cimtype = None
+    cimtype=None
 
 
 class CIMDateTime(CIMType):
@@ -574,3 +572,7 @@ def is_number_or_bool(value):
 
 def is_text_or_bool(value):
     return is_text(value) or isinstance(value, bool)
+
+
+def is_cim_type(value):
+    return isinstance(value, CIMType)

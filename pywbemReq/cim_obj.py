@@ -41,7 +41,7 @@ from datetime import datetime, timedelta
 
 from pywbemReq import cim_xml, cim_types
 from pywbemReq.cim_types import is_text, is_number_or_bool, is_number, \
-    is_int
+    is_int, is_cim_type
 
 __all__ = ['NocaseDict', 'cmpname', 'CIMClassName', 'CIMProperty',
            'CIMInstanceName', 'CIMInstance', 'CIMClass', 'CIMMethod',
@@ -1607,7 +1607,7 @@ class CIMInstance(object):
         # Don't let anyone set integer or float values.  You must use
         # a subclass from the cim_type module.
 
-        if is_number(value):
+        if is_number(value) and not is_cim_type(value):
             raise TypeError('Type of numeric value must be a CIM type but is ' \
                             '%s' % type(value))
 

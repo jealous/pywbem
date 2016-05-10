@@ -6,7 +6,9 @@
 /.tox/
 *.pyc
 *.log
-pywbem.egg-info
+/dist/
+pywbem.egg-info/
+pywbemReq.egg-info/
 MANIFEST
 parser.out
 moflog.txt
