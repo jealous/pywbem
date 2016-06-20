@@ -201,9 +201,9 @@ def _normalize_data(data):
 
 
 def _normalize_ca_certs(verify, ca_certs):
-    if not verify and ca_certs is None:
+    if verify and ca_certs is None:
         ca_certs = get_default_ca_certs()
-    elif verify:
+    elif not verify:
         ca_certs = None
     return ca_certs
 
