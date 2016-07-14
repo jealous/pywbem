@@ -110,7 +110,7 @@ class MinutesFromUTC(tzinfo):
 
 class CIMType(object):
     """Base type for numeric and datetime CIM types."""
-    cimtype=None
+    cimtype = None
 
 
 class CIMDateTime(CIMType):
@@ -149,7 +149,6 @@ class CIMDateTime(CIMType):
           :raise ValueError:
           :raise TypeError:
         """
-        super(CIMDateTime, self).__init__(dtarg)
         self.cimtype = 'datetime'
         self._timedelta = None
         self._datetime = None
