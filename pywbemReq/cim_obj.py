@@ -1217,7 +1217,6 @@ class CIMInstanceName(object):
 
         return (cmpname(self.classname, other.classname) or
                 cmp(self.keybindings, other.keybindings) or
-                cmpname(self.host, other.host) or
                 cmpname(self.namespace, other.namespace))
 
     def __str__(self):
