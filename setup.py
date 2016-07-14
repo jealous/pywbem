@@ -4,7 +4,7 @@ import os
 
 # Version of the pywbem package
 # !!! Keep in sync with version stated in module docstring, above !!!
-__version__ = '0.0.4'
+__version__ = '0.0.5'
 
 __author__ = 'Cedric Zhuang'
 
